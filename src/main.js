@@ -1,6 +1,5 @@
 import './assets/main.css'
 import './assets/flags/flags.css'
-import tolgeeService from "@/service/tolgee_service.js";
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { createI18n } from 'vue-i18n'
@@ -47,15 +46,9 @@ async function loadTranslations() {
     }
 
     console.log("Cache inválido ou inexistente. Buscando novas traduções...");
-    const languages = ["en-US", "es-ES", "pt-PT"];
-    const translations = await tolgeeService.getTranslations(languages);
 
-    localStorage.setItem(CACHE_KEY, JSON.stringify(translations));
     localStorage.setItem(CACHE_TIMESTAMP_KEY, new Date().toISOString());
 
-    Object.entries(translations).forEach(([lang, messages]) => {
-      i18n.global.setLocaleMessage(lang, messages);
-    });
 
     console.log("Traduções carregadas e cache atualizado.");
   } catch (error) {
