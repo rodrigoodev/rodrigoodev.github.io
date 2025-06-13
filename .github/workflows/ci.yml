@@ -9,82 +9,8 @@ on:
     branches:
       - main
       - master
-env:
-  VITE_TOLGEE_API_URL: ${{ secrets.VITE_TOLGEE_API_URL }}
-  VITE_TOLGEE_PROJECT_ID: ${{ secrets.VITE_TOLGEE_PROJECT_ID }}
-  VITE_TOLGEE_API_KEY: ${{ secrets.VITE_TOLGEE_API_KEY }}
+
 jobs:
-  import_base:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Debug - Check if pt-BR.json exists
-        run: |
-          FILE_PATH="src/i18n/pt-BR.json"
-          echo "Verificando se o arquivo pt-BR.json existe..."
-          if [ -f "$FILE_PATH" ]; then
-            echo "Arquivo pt-BR.json encontrado."
-            ls -l "$FILE_PATH"
-          else
-            echo "Erro: Arquivo pt-BR.json não encontrado no caminho esperado!"
-            ls -R src
-            exit 1
-          fi
-
-      - name: Import to Tolgee
-        env:
-          VITE_TOLGEE_API_URL: ${{ secrets.VITE_TOLGEE_API_URL }}
-          VITE_TOLGEE_PROJECT_ID: ${{ secrets.VITE_TOLGEE_PROJECT_ID }}
-          VITE_TOLGEE_API_KEY: ${{ secrets.VITE_TOLGEE_API_KEY }}
-        run: |
-          echo "Importando o arquivo pt-BR.json para o Tolgee."
-          FILE_PATH="src/i18n/pt-BR.json"
-
-          params=$(jq -c -n '{
-            structureDelimiter: ".",
-            forceMode: "KEEP",
-            overrideKeyDescriptions: true,
-            convertPlaceholdersToIcu: true,
-            createNewKeys: true,
-            fileMappings: [{
-              fileName: "pt-BR",
-              namespace: "",
-              format: "JSON_ICU",
-              languageTag: "pt-BR"
-            }],
-            tagNewKeys: ["imported"],
-            removeOtherKeys: false
-          }')
-
-          echo "Curl command:"
-          echo "curl -X POST \"$VITE_TOLGEE_API_URL/v2/projects/$VITE_TOLGEE_PROJECT_ID/single-step-import\" \
-            -H \"Content-Type: multipart/form-data\" \
-            -H \"X-API-Key: [REDACTED]\" \
-            -F \"files=@$FILE_PATH\" \
-            -F \"params=$params\" \
-            -v"
-
-          response=$(curl -X POST "$VITE_TOLGEE_API_URL/v2/projects/$VITE_TOLGEE_PROJECT_ID/single-step-import" \
-            -H "Content-Type: multipart/form-data" \
-            -H "X-API-Key: $VITE_TOLGEE_API_KEY" \
-            -F "files=@$FILE_PATH" \
-            -F "params=$params" \
-            -w "\n%{http_code}" \
-            -v 2>&1)
-
-          echo "Curl Response:"
-          echo "$response"
-
-          http_code=$(echo "$response" | tail -n1)
-
-          if [ "$http_code" -ge 400 ]; then
-            echo "Erro na importação. Código de status HTTP: $http_code"
-            exit 1
-          else
-            echo "Importação concluída com sucesso."
-          fi
   ci:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -125,6 +51,7 @@ jobs:
 
       - name: Run linter
         run: pnpm lint
+
   build:
     runs-on: ubuntu-latest
     needs: ci
@@ -141,12 +68,6 @@ jobs:
         with:
           version: 8
           run_install: false
-
-      - name: Configurar arquivo .env
-        run: |
-          echo "VITE_TOLGEE_API_URL=${{ secrets.VITE_TOLGEE_API_URL }}" >> .env
-          echo "VITE_TOLGEE_PROJECT_ID=${{ secrets.VITE_TOLGEE_PROJECT_ID }}" >> .env
-          echo "VITE_TOLGEE_API_KEY=${{ secrets.VITE_TOLGEE_API_KEY }}" >> .env
 
       - name: Install dependencies
         run: pnpm install
