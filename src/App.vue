@@ -1,10 +1,10 @@
 <script setup>
-import { RouterView } from 'vue-router'
+import Menu from "./components/Menu.vue";
 </script>
 
 <template>
-  <RouterView />
+  <Menu />
+  <router-view />
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>
